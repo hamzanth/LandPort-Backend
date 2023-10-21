@@ -10,10 +10,10 @@ const jwtSecret = process.env.JWT_SECRET
 const router = express.Router()
 
 router.get('/:id', async function(req, res, next){
-    const customerId = req.params.id
+    const userId = req.params.id
     try{
-        const customer = await Users.findById(customerId)
-        res.status(200).json({message: "Successfully retrieved user", customer: customer})
+        const user = await Users.findById(userId)
+        res.status(200).json({message: "Successfully retrieved user", user: user})
     }
     catch(error){
         const err = new Error("The customer could not be found")
@@ -40,10 +40,10 @@ router.post("/register", function(req, res, next){
             phoneNumber: phoneNumber
         }
         await Users.create(inputData)
-        .then(customer => {
+        .then(user => {
             const maxAge = 3 * 60 * 60
-            const token =  jwt.sign({id: customer._id, role: customer.role}, jwtSecret, {expiresIn: maxAge})
-            res.status(201).json({message: "Successfully Created", token: token, customer: customer})
+            const token =  jwt.sign({id: user._id, role: user.role}, jwtSecret, {expiresIn: maxAge})
+            res.status(201).json({message: "Successfully Created", token: token, user: user})
         })
         .catch(error => {
             next(error)
@@ -58,8 +58,8 @@ router.post("/login", async function(req, res, next){
     const name = req.body.name
     const password = req.body.password
     try{
-        const customer = await Users.findOne({name: name})
-        bcrypt.compare(password, customer.password)
+        const user = await Users.findOne({name: name})
+        bcrypt.compare(password, user.password)
         .then(result => {
             if(!result){
                 const error = new Error("Login Not Successful")
@@ -69,11 +69,11 @@ router.post("/login", async function(req, res, next){
             else{
                 const maxAge = 3 * 60 * 60
                 const token = jwt.sign(
-                    {id: customer._id, role: customer.role},
+                    {id: user._id, role: user.role},
                     jwtSecret,
                     {expiresIn: maxAge}
                 )
-                res.status(200).json({message: "Customer Successfully Logged in", token: token, customer: customer})
+                res.status(200).json({message: "Customer Successfully Logged in", token: token, user: user})
             }
         })
         .catch(err => {

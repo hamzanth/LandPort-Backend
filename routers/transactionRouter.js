@@ -48,7 +48,7 @@ router.post("/:uid/make-request", async function(req, res, next){
                 })
                 .then( async (requestObj) => {
                     try{
-                        const user = await Users.findById(customerId)
+                        const user = await Users.findById(userId)
                         user.requests.push(requestObj)
                         await user.save()
                         res.status(201).json({message: "Request Successfully Sent. Wait a moment for response", request: requestObj})
