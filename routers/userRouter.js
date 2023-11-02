@@ -101,4 +101,14 @@ router.post("/login", async function(req, res, next){
     }
 })
 
+router.get("/riders-company/get-companies", async function(req, res, next){
+    console.log("the route has been hit")
+    await Users.find({role: "ridersCompany"})
+    .then(riders => {
+        console.log(riders)
+        res.status(200).json({message: "Successfully gotten all the riders company ", riders: riders})
+    })
+    .catch(error => next(error))
+})
+
 module.exports = router

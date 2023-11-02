@@ -1,10 +1,21 @@
 const express = require('express')
 const router = express.Router()
+const crypto = require('crypto')
 const Transactions = require('../models/users').Transactions
+const Linker = require('../models/users').Linker
 const Users = require('../models/users').Users
 const Request = require('../models/users').Request
 const TransPerson = require('../models/users').TransPerson
 const Products = require('../models/products').Products
+
+router.get("/requests", async function(req, res, next){
+    await Request.find({})
+    .then(requests => {
+        res.status(200).json({message: "Successfully gotten all the requests ", requests: requests})
+
+    })
+    .catch(error => next(error))
+})
 
 router.post("/:uid/make-request", async function(req, res, next){
     const senderName = req.body.senderName
@@ -69,6 +80,81 @@ router.post("/:uid/make-request", async function(req, res, next){
     .catch(error => {
         next(error)
     })
+})
+
+router.post("/create-transaction", async function(req, res, next){
+    const senderName = req.body.senderName
+    const request = req.body.request
+    const rider = req.body.rider
+
+    console.log(senderName)
+    // console.log(request)
+    // console.log(rider)
+    try{
+        const user = await Users.findOne({name: senderName})
+        console.log(user)
+        await Linker.create({
+            name: user.name,
+            category: user.role,
+            location: user.location,
+            phoneNumber: user.phoneNumber
+        })
+        .then(async (customerLinker) => {
+            await Linker.create({
+                name: rider.name,
+                category: rider.role,
+                location: rider.location,
+                phoneNumber: rider.phoneNumber
+            })
+            .then(async (riderCompanyLinker) => {
+                const refNumber = crypto.randomBytes(8).toString("hex")
+                await Transactions.create({
+                    refNumber: refNumber,
+                    transactionCost: 500,
+                    request: request,
+                    customer: customerLinker,
+                    riderCompany: riderCompanyLinker
+                })
+                .then(async (transaction) => {
+                    user.transactions.push(transaction)
+                    try{
+                        await user.save()
+                        const ridersCompany = await Users.findById(rider._id)
+                        ridersCompany.transactions.push(transaction)
+                        try{
+                            await ridersCompany.save()
+                            await Users.find({role: "lmis"})
+                            .then(async (lmis) => {
+                                for(let i=0; i<lmis.length; i++){
+                                    lmis[i].transactions.push(transaction)
+                                    try{
+                                        await lmis[i].save()
+                                    }
+                                    catch(error){
+                                        next(error)
+                                    }
+                                }
+                                res.status(201).json({message: "Transaction Successfully Created", transaction: transaction})
+                            })
+                            .catch(error => next(error))
+                        }
+                        catch(error){
+                            next(error)
+                        }
+                    }
+                    catch(error){
+                        next(error)
+                    }
+                })
+                .catch(error => next(error))
+            })
+            .catch(error => next(error))
+        })
+        .catch(error => next(error))
+    }
+    catch(error){
+        next(error)
+    }
 })
 
 module.exports = router
