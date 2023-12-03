@@ -17,6 +17,14 @@ router.get("/requests", async function(req, res, next){
     .catch(error => next(error))
 })
 
+router.get("/unapproved-requests", async function(req, res, next){
+    await Request.find({approved: false})
+    .then(requests => {
+        res.status(200).json({message: "Successfully gotten all the requests ", requests: requests})
+    })
+    .catch(error => next(error))
+})
+
 router.post("/:uid/make-request", async function(req, res, next){
     const senderName = req.body.senderName
     const senderLocation = req.body.senderLocation
@@ -88,11 +96,13 @@ router.post("/create-transaction", async function(req, res, next){
     const rider = req.body.rider
 
     console.log(senderName)
+    console.log("The request is ...")
+    console.log(request)
     // console.log(request)
     // console.log(rider)
     try{
         const user = await Users.findOne({name: senderName})
-        console.log(user)
+        // console.log(user)
         await Linker.create({
             name: user.name,
             category: user.role,
@@ -134,7 +144,16 @@ router.post("/create-transaction", async function(req, res, next){
                                         next(error)
                                     }
                                 }
-                                res.status(201).json({message: "Transaction Successfully Created", transaction: transaction})
+                                const requestObj = await Request.findById(request._id)
+                                requestObj.approved = true
+                                console.log(requestObj)
+                                try{
+                                    await requestObj.save()
+                                    res.status(201).json({message: "Transaction Successfully Created", transaction: transaction})
+                                }
+                                catch(error){
+                                    next(error)
+                                }
                             })
                             .catch(error => next(error))
                         }
