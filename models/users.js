@@ -12,7 +12,8 @@ const TransPersonSchema = new mongoose.Schema({
         trim: true
     },
     location: {
-        type: String
+        latitude: Number,
+        longitude: Number
     },
     phoneNumber: {
         type: Number
@@ -59,6 +60,17 @@ const transactionSchema = new mongoose.Schema({
     completed: {
         type: Boolean,
         default: false
+    },
+    customerConfirm: {
+        type: Boolean,
+        default: false
+    },
+    riderConfirm: {
+        type: Boolean,
+        default: false
+    },
+    distance: {
+        type: Number,
     },
     transactionCost: {
         type: Number,

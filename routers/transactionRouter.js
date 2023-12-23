@@ -25,7 +25,25 @@ router.get("/unapproved-requests", async function(req, res, next){
     .catch(error => next(error))
 })
 
+const calculateDistance = (userCoords, recvCoords) => {
+    const toRadian = n => (n * Math.PI) / 180
+    const R = 6371
+    const lat2 = recvCoords.latitude
+    const lon2 = recvCoords.longitude
+    const lat1 = userCoords.latitude
+    const lon1 = userCoords.longitude
+    const x1 = lat2 - lat1
+    const dLat = toRadian(x1)
+    const x2 = lon2 - lon1
+    const dLon = toRadian(x2)
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(toRadian(lat1)) * Math.cos(toRadian(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2)
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+    const d = R * c
+    return d
+}
+
 router.post("/:uid/make-request", async function(req, res, next){
+    console.log("We hit the make request endpoint")
     const senderName = req.body.senderName
     const senderLocation = req.body.senderLocation
     const senderPhoneNumber = req.body.senderPhoneNumber
@@ -38,19 +56,31 @@ router.post("/:uid/make-request", async function(req, res, next){
     const productQuantity = req.body.productQuantity
     const productImage = req.body.productImage
 
+    console.log(receiverLocation)
+    console.log(senderLocation)
+
+    // console.log(calculateDistance(senderLocation, receiverLocation))
+
+    // console.log(senderName)
+    // console.log(senderLocation)
+    // console.log(senderPhoneNumber)
+    // console.log(receiverName)
+    // console.log(receiverLocation)
+    // console.log(receiverPhoneNumber)
+
     const userId = req.params.uid
 
     await TransPerson.create({
         category: "sender",
         name: senderName,
-        location: senderLocation,
+        location: {latitude: senderLocation.latitude, longitude: senderLocation.longitude},
         phoneNumber: senderPhoneNumber
     })
     .then(async (senderObj) => {
         await TransPerson.create({
             category: "receiver",
             name: receiverName,
-            location: receiverLocation,
+            location: {latitude: receiverLocation.latitude, longitude: receiverLocation.longitude},
             phoneNumber: receiverPhoneNumber
         })
         .then(async (receiverObj) => {
@@ -95,9 +125,13 @@ router.post("/create-transaction", async function(req, res, next){
     const request = req.body.request
     const rider = req.body.rider
 
-    console.log(senderName)
-    console.log("The request is ...")
-    console.log(request)
+    // console.log(senderName)
+    // console.log("The request is ...")
+    // console.log(request.recipient.location)
+    // console.log(request.sender.location)
+    const distance = calculateDistance(request.sender.location, request.recipient.location)
+    const cost = distance * 500
+    const transCost = Number((cost / 10).toPrecision(3) + "0")
     // console.log(request)
     // console.log(rider)
     try{
@@ -120,7 +154,8 @@ router.post("/create-transaction", async function(req, res, next){
                 const refNumber = crypto.randomBytes(8).toString("hex")
                 await Transactions.create({
                     refNumber: refNumber,
-                    transactionCost: 500,
+                    transactionCost: transCost,
+                    distance: distance,
                     request: request,
                     customer: customerLinker,
                     riderCompany: riderCompanyLinker
@@ -172,6 +207,49 @@ router.post("/create-transaction", async function(req, res, next){
         .catch(error => next(error))
     }
     catch(error){
+        next(error)
+    }
+})
+
+router.put("/:uid/cust-confirm/:tid", async function(req, res, next){
+    const userId = req.params.uid
+    const transId = req.params.tid
+    try{
+        const transaction = await Transactions.findById(transId)
+        transaction.customerConfirm = true
+        // console.log(transaction)
+        try {
+            await transaction.save()
+            await Users.find({})
+            .then( async (users) => {
+                for (let i=0; i<users.length; i++){
+                    users[i].transactions.id(transId).customerConfirm = true
+                    try {
+                        await users[i].save()
+                        console.log("where is the error comming from") 
+                    } catch (error) {
+                        next(error)
+                    }
+                }
+                res.status(200).json({message: "Transaction successfully confirmed", transaction: transaction})
+            })
+        } catch (error) {
+            next(error)
+        }
+    }
+    catch(error){
+        next(error)
+    }
+})
+
+router.delete("/:uid/delete-transaction/:tid", async function(req, res, next){
+    console.log("This route has been hit")
+    const userId = req.params.uid
+    const transId = req.params.tid
+    try {
+        await Users.findOneAndUpdate({_id: userId}, {$pull: {transactions: {_id: transId}}})
+        res.status(200).json({message: "Transaction successfully Removed"})
+    } catch (error) {
         next(error)
     }
 })
