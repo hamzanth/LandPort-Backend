@@ -12,7 +12,7 @@ const app = express()
 app.use(logger("dev"))
 app.use(bodyParser.json())
 
-mongoose.connect("mongodb://127.0.0.1:27017/LandPort")
+mongoose.connect(process.env.MONGO_URI)
 const db = mongoose.connection
 db.on("error", function(err){
     console.log(err)
