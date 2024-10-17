@@ -20,20 +20,6 @@ const TransPersonSchema = new mongoose.Schema({
     }
 })
 
-const requestSchema = new mongoose.Schema({
-    date: {
-        type: Date,
-        default: Date.now
-    },
-    approved: {
-        type: Boolean,
-        default: false
-    },
-    sender: TransPersonSchema,
-    recipient: TransPersonSchema,
-    product: productSchema
-})
-
 const linkerSchema = new mongoose.Schema({
     category: {
         type: String
@@ -46,7 +32,58 @@ const linkerSchema = new mongoose.Schema({
     },
     phoneNumber: {
         type: Number
+    },
+})
+
+const riderSchema = mongoose.Schema({
+    available: {
+        type: Boolean,
+        default: true
+    },
+    plateNumber: {
+        type: String,
+        default: "",
+        trim: true
+    },
+    riderName: {
+        type: String,
+        default: ""
+    },
+    bikeColor: {
+        type: String,
+        default: "black"
+    },
+    dateAdded: {
+        type: Date,
+        default: Date.now
+    },
+    imageUrl: {
+        type: String,
+        default: ""
     }
+    
+})
+
+const requestSchema = new mongoose.Schema({
+    date: {
+        type: Date,
+        default: Date.now
+    },
+    approved: {
+        type: Boolean,
+        default: false
+    },
+    distance: {
+        type: Number,
+    },
+    transactionCost: {
+        type: Number,
+    },
+    sender: TransPersonSchema,
+    recipient: TransPersonSchema,
+    product: productSchema,
+    rider: riderSchema,
+    riderCompany: linkerSchema
 })
 
 const transactionSchema = new mongoose.Schema({
@@ -69,15 +106,11 @@ const transactionSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
-    distance: {
-        type: Number,
-    },
     transactionCost: {
         type: Number,
     },
-    request: requestSchema,
-    customer: linkerSchema,
-    riderCompany: linkerSchema 
+    request: [requestSchema],
+    customer: linkerSchema, 
 })
 
 const UserSchema = mongoose.Schema({
@@ -102,6 +135,10 @@ const UserSchema = mongoose.Schema({
         type: String,
         default: "not known yet"
     },
+    mapLocation: {
+        type: String,
+        default: "not known yet"
+    },
     phoneNumber: {
         type: Number
     },
@@ -109,16 +146,27 @@ const UserSchema = mongoose.Schema({
         type: Number,
         default: 0
     },
+    // totalRiders: {
+    //     type: Number,
+    //     default: 5
+    // },
+    // ridersAvailable: {
+    //     type: Number, 
+    //     default: 0
+    // },
+    riders: [riderSchema],
     transactions: [transactionSchema],
     requests: [requestSchema]
 })
 
+const Riders = mongoose.model("rider", riderSchema)
 const Users = mongoose.model("user", UserSchema)
 const Request = mongoose.model("request", requestSchema)
 const TransPerson = mongoose.model("transperson", TransPersonSchema)
 const Transactions = mongoose.model("transaction", transactionSchema)
 const Linker = mongoose.model("linker", linkerSchema)
 
+module.exports.Riders = Riders
 module.exports.Users = Users
 module.exports.UserSchema = UserSchema
 module.exports.Request = Request
