@@ -146,6 +146,10 @@ const UserSchema = mongoose.Schema({
         type: Number,
         default: 0
     },
+    pushToken: {
+        type: String,
+        default: ""
+    },
     // totalRiders: {
     //     type: Number,
     //     default: 5

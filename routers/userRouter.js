@@ -3,12 +3,20 @@
 const express = require("express")
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
+const admin = require("firebase-admin")
+const serviceAccount = require('../landport-3bc55-firebase-adminsdk-bvbwc-75aa56e4d4.json')
 const Users = require('../models/users').Users
 const Request = require('../models/users').Request
 const Riders = require("../models/users").Riders
 const jwtSecret = process.env.JWT_SECRET
 
 const router = express.Router()
+
+admin.initializeApp({
+    credentials: admin.credential.cert(serviceAccount),
+    projectId: "landport-3bc55"
+})
+
 
 router.get('/:id', async function(req, res, next){
     const userId = req.params.id
@@ -30,6 +38,23 @@ router.post("/register", function(req, res, next){
     const password = req.body.password
     const location = req.body.location
     const phoneNumber = req.body.phoneNumber
+    const expoPushToken = req.body.pushToken
+    console.log("Expo push token is " + expoPushToken)
+    const message = {
+        notification: {
+            title: "Title of your notification",
+            body: "Body of your notification"
+        },
+        token: expoPushToken
+    }
+
+    // admin.messaging().send(message)
+    // .then((response) => {
+    //     console.log("Succesfully sent message: ", response)
+    // })
+    // .catch((error) => {
+    //     console.log("Error sending message: ", error)
+    // })
     console.log("We have hit the register route")
     console.log(jwtSecret)
 
@@ -40,7 +65,8 @@ router.post("/register", function(req, res, next){
             email: email,
             password: hashpassword,
             location: location,
-            phoneNumber: phoneNumber
+            phoneNumber: phoneNumber,
+            pushToken: expoPushToken
         }
         await Users.create(inputData)
         .then(user => {
