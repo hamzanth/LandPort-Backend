@@ -4,7 +4,7 @@ const express = require("express")
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
 const admin = require("firebase-admin")
-const serviceAccount = require('../landport-3bc55-firebase-adminsdk-bvbwc-75aa56e4d4.json')
+// const serviceAccount = require('../landport-3bc55-firebase-adminsdk-bvbwc-75aa56e4d4.json')
 const Users = require('../models/users').Users
 const Request = require('../models/users').Request
 const Riders = require("../models/users").Riders
@@ -12,10 +12,10 @@ const jwtSecret = process.env.JWT_SECRET
 
 const router = express.Router()
 
-admin.initializeApp({
-    credentials: admin.credential.cert(serviceAccount),
-    projectId: "landport-3bc55"
-})
+// admin.initializeApp({
+//     credentials: admin.credential.cert(serviceAccount),
+//     projectId: "landport-3bc55"
+// })
 
 
 router.get('/:id', async function(req, res, next){
